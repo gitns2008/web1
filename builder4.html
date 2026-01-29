@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Site Builder | CSS Navigator + Active Status</title>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --panel: #141414;
+            --input-bg: #1d1d1d;
+            --accent: #007bff;
+            --border: #2a2a2a;
+            --text-main: #e0e0e0;
+            --text-muted: #888;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Top Header */
+        header {
+            padding: 0 20px;
+            background: #000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            height: 60px;
+        }
+
+        .logo-section { display: flex; align-items: center; gap: 20px; }
+        .logo { font-weight: 800; color: var(--accent); font-size: 1.1rem; }
+        
+        /* New Active Element Indicator */
+        .active-status {
+            background: #222;
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: var(--text-muted);
+            border: 1px solid #333;
+            display: none; /* Shown via JS */
+        }
+        .active-status b { color: var(--accent); margin-left: 5px; font-family: monospace; }
+
+        /* Main Workspace */
+        .workspace { display: flex; flex: 1; overflow: hidden; }
+
+        .html-panel, .css-panel {
+            background: var(--panel);
+            border-right: 2px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            resize: horizontal;
+            overflow: auto;
+        }
+        .html-panel { width: 400px; min-width: 150px; }
+        .css-panel { width: 400px; min-width: 150px; }
+
+        .editor-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+            overflow: hidden;
+        }
+
+        .label-strip {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 0 8px 0;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        textarea {
+            flex: 1;
+            background: var(--input-bg);
+            color: #d4d4d4;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Fira Code', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+        }
+
+        textarea:focus { border-color: var(--accent); }
+
+        /* Preview Area */
+        .preview-pane { flex: 1; padding: 20px; background: #0f0f0f; display: flex; flex-direction: column; }
+        .browser-mockup { flex: 1; background: white; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 15px 40px rgba(0,0,0,0.6); }
+        .browser-bar { background: #ededed; height: 35px; display: flex; align-items: center; padding: 0 15px; gap: 7px; }
+        .dot { width: 11px; height: 11px; border-radius: 50%; }
+        .red { background: #ff5f56; } .yellow { background: #ffbd2e; } .green { background: #27c93f; }
+        iframe { flex: 1; border: none; width: 100%; }
+
+        .btn { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-section">
+            <div class="logo">BUILDER PRO</div>
+            <div id="status-bar" class="active-status">Editing: <b id="current-selector">None</b></div>
+        </div>
+        <button class="btn" id="download-btn">Export Site</button>
+    </header>
+
+    <div class="workspace">
+        <aside class="html-panel">
+            <div class="editor-container">
+                <div class="label-strip">HTML</div>
+                <textarea id="html-code" spellcheck="false">
+<div class="wrapper">
+  <h1 id="hero-title">Interactive UI</h1>
+  <p class="sub-text">Click elements to jump to code!</p>
+  <button class="main-button">Learn More</button>
+</div></textarea>
+            </div>
+        </aside>
+
+        <aside class="css-panel">
+            <div class="editor-container">
+                <div class="label-strip">CSS</div>
+                <textarea id="css-code" spellcheck="false">
+.wrapper {
+  padding: 60px;
+  text-align: center;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+#hero-title {
+  color: #007bff;
+  font-size: 48px;
+  margin-bottom: 10px;
+}
+
+.sub-text {
+  color: #555;
+  font-size: 18px;
+}
+
+.main-button {
+  margin-top: 20px;
+  background: #007bff;
+  color: #fff;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+}</textarea>
+            </div>
+        </aside>
+
+        <main class="preview-pane">
+            <div class="browser-mockup">
+                <div class="browser-bar"><div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div></div>
+                <iframe id="preview"></iframe>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const htmlInput = document.getElementById('html-code');
+        const cssInput = document.getElementById('css-code');
+        const previewFrame = document.getElementById('preview');
+        const statusBar = document.getElementById('status-bar');
+        const currentSelectorDisplay = document.getElementById('current-selector');
+
+        function updatePreview() {
+            const inspectorScript = `
+                <script>
+                    document.body.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        window.parent.postMessage({
+                            type: 'select-element',
+                            elementHtml: e.target.outerHTML.trim(),
+                            className: e.target.className,
+                            id: e.target.id,
+                            tagName: e.target.tagName.toLowerCase()
+                        }, '*');
+                    });
+                <\/script>
+            `;
+            const content = `<!DOCTYPE html><html><head><style>${cssInput.value}</style></head><body>${htmlInput.value}${inspectorScript}</body></html>`;
+            previewFrame.srcdoc = content;
+        }
+
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'select-element') {
+                const { elementHtml, className, id, tagName } = event.data;
+
+                // Determine Selector Name
+                let selector = id ? "#" + id : (className ? "." + className.split(" ")[0] : tagName);
+                
+                // Show Status Bar
+                statusBar.style.display = 'block';
+                currentSelectorDisplay.textContent = selector;
+
+                // 1. Find & Highlight HTML
+                const hIndex = htmlInput.value.indexOf(elementHtml);
+                if (hIndex !== -1) {
+                    htmlInput.focus();
+                    htmlInput.setSelectionRange(hIndex, hIndex + elementHtml.length);
+                    htmlInput.scrollTop = (htmlInput.value.substr(0, hIndex).split("\n").length - 5) * 20;
+                }
+
+                // 2. Find & Highlight CSS
+                const cssContent = cssInput.value;
+                const cIndex = cssContent.indexOf(selector);
+                if (cIndex !== -1) {
+                    setTimeout(() => {
+                        cssInput.focus();
+                        cssInput.setSelectionRange(cIndex, cIndex + selector.length);
+                        cssInput.scrollTop = (cssContent.substr(0, cIndex).split("\n").length - 5) * 20;
+                    }, 150);
+                }
+            }
+        });
+
+        htmlInput.addEventListener('input', updatePreview);
+        cssInput.addEventListener('input', updatePreview);
+        
+        document.getElementById('download-btn').addEventListener('click', () => {
+            const finalCode = `<!DOCTYPE html><html><head><style>${cssInput.value}</style></head><body>${htmlInput.value}</body></html>`;
+            const blob = new Blob([finalCode], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'index.html'; a.click();
+        });
+
+        updatePreview();
+    </script>
+</body>
+</html>
